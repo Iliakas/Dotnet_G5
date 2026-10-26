@@ -5,13 +5,10 @@ namespace Web.Controllers
 {
     public class ProfilController : Controller
     {
-        public String Index()
+        public IActionResult Index()
         {
-            UserModel user = new UserModel();
-            user.LastName = "Doe";
-            user.FirstName = "John";
-            user.EMail = "john.doe@example.com";
-            return user.LastName + ", " + user.FirstName + " (" + user.EMail + ")"  ;
+
+            return View()  ;
         }
         public String  ChangePassword()
         {

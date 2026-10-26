@@ -4,9 +4,9 @@ namespace Web.Controllers
 {
     public class LoginController : Controller
     {
-        public String  Index()
+        public IActionResult  Index()
         {
-            return "Login";
+            return View();
         }
     }
 }
