@@ -1,4 +1,639 @@
-﻿<div>
-Message: <input type="text" id="message" name="message"  />
+﻿
+@{
+    ViewData["Title"] = "Conversation";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: 'Poppins', sans-serif;
+        background: #f8f9fd;
+        overflow: hidden;
+    }
+
+    .chat-container {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+        width: 280px;
+        flex-shrink: 0;
+        background: #11152e;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        padding: 25px 18px;
+        transition: .3s;
+    }
+
+    .logo {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 35px;
+    }
+
+    .logo span {
+        color: #7655ff;
+    }
+
+    .new-chat {
+        padding: 14px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(90deg, #4933f5, #8238f5);
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .history {
+        margin-top: 35px;
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .history h4 {
+        color: #9297b5;
+        font-size: 13px;
+        margin-bottom: 15px;
+    }
+
+    .history-item {
+        padding: 13px 10px;
+        border-radius: 9px;
+        color: #d2d5e6;
+        font-size: 13px;
+        cursor: pointer;
+        margin-bottom: 7px;
+    }
+
+    .history-item i {
+        margin-right: 10px;
+    }
+
+    .history-item:hover,
+    .history-item.active {
+        background: #252b50;
+        color: white;
+    }
+
+    .sidebar-footer {
+        border-top: 1px solid #303653;
+        padding-top: 20px;
+    }
+
+    .profile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #6848ef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .profile h4 {
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .profile small {
+        color: #999fbd;
+        font-size: 11px;
+    }
+
+    /* MAIN CHAT */
+    .chat-main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        background: white;
+    }
+
+    .chat-header {
+        height: 75px;
+        flex-shrink: 0;
+        border-bottom: 1px solid #ececf2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 35px;
+    }
+
+    .chat-header h3 {
+        font-size: 17px;
+        margin: 0;
+        color: #171a35;
+    }
+
+    .status {
+        color: #777d91;
+        font-size: 11px;
+    }
+
+    .online-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        background: #20c77a;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+
+    .menu-btn {
+        display: none;
+        border: none;
+        background: transparent;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    /* MESSAGES */
+    .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 35px 12%;
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .welcome {
+        margin: auto;
+        text-align: center;
+        max-width: 650px;
+    }
+
+    .welcome-icon {
+        font-size: 65px;
+        color: #6848ef;
+        margin-bottom: 20px;
+    }
+
+    .welcome h1 {
+        font-size: 32px;
+        color: #25264b;
+    }
+
+    .welcome h2 {
+        color: #6848ef;
+        font-size: 23px;
+        margin: 10px 0;
+    }
+
+    .welcome p {
+        color: #85899c;
+        font-size: 14px;
+        margin-bottom: 30px;
+    }
+
+    /* SUGGESTIONS */
+    .suggestions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .suggestions button {
+        background: white;
+        border: 1px solid #e4e5ef;
+        padding: 17px;
+        border-radius: 12px;
+        cursor: pointer;
+        color: #444963;
+        text-align: left;
+        font-size: 13px;
+        transition: .3s;
+    }
+
+    .suggestions button i {
+        color: #6848ef;
+        margin-right: 8px;
+    }
+
+    .suggestions button:hover {
+        border-color: #6848ef;
+        background: #f8f6ff;
+    }
+
+    /* MESSAGE BUBBLES */
+    .message {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        max-width: 85%;
+        line-height: 1.7;
+        font-size: 14px;
+    }
+
+    .message p {
+        padding: 15px 20px;
+        border-radius: 15px;
+        margin: 0;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+    }
+
+    .user-message {
+        align-self: flex-end;
+    }
+
+    .user-message p {
+        background: #6848ef;
+        color: white;
+        border-bottom-right-radius: 3px;
+    }
+
+    .ai-message {
+        align-self: flex-start;
+    }
+
+    .ai-message p {
+        background: #f1f1f8;
+        color: #30334c;
+        border-bottom-left-radius: 3px;
+    }
+
+    .ai-avatar {
+        background: #6848ef;
+        color: white;
+        width: 35px;
+        height: 35px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    /* INPUT */
+    .input-area {
+        padding: 15px 12% 20px;
+        flex-shrink: 0;
+    }
+
+    .message-box {
+        display: flex;
+        align-items: flex-end;
+        border: 1px solid #dedfea;
+        border-radius: 18px;
+        padding: 15px;
+        background: white;
+        box-shadow: 0 5px 20px rgba(0,0,0,.04);
+    }
+
+    .message-box:focus-within {
+        border-color: #6848ef;
+    }
+
+    .message-box textarea {
+        flex: 1;
+        border: none;
+        outline: none;
+        resize: none;
+        font-size: 14px;
+        padding: 10px;
+        max-height: 120px;
+        font-family: inherit;
+    }
+
+    .send-btn {
+        background: #6848ef;
+        color: white;
+        border: none;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        cursor: pointer;
+    }
+
+    .send-btn:hover {
+        background: #4933d9;
+    }
+
+    .disclaimer {
+        text-align: center;
+        font-size: 10px;
+        color: #a0a2b0;
+        margin-top: 12px;
+    }
+
+    /* RESPONSIVE */
+    @@media(max-width: 850px) {
+        .sidebar {
+            position: fixed;
+            left: -280px;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar.show {
+            left: 0;
+        }
+
+        .menu-btn {
+            display: block;
+        }
+
+        .messages {
+            padding: 25px 5%;
+        }
+
+        .input-area {
+            padding: 15px 5%;
+        }
+    }
+
+    @@media(max-width: 500px) {
+        .suggestions {
+            grid-template-columns: 1fr;
+        }
+
+        .welcome h1 {
+            font-size: 25px;
+        }
+
+        .welcome h2 {
+            font-size: 18px;
+        }
+
+        .chat-header {
+            padding: 0 18px;
+        }
+
+        .message {
+            max-width: 95%;
+        }
+    }
+</style>
+
+
+<div class="chat-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+        <div class="logo">
+            ✦ Chat<span>AI</span>
+        </div>
+
+        <button class="new-chat" onclick="newConversation()">
+            <i class="fa-solid fa-plus"></i>
+            Nouvelle conversation
+        </button>
+
+        <div class="history">
+            <h4>Historique</h4>
+
+            <div class="history-item active">
+                <i class="fa-regular fa-message"></i>
+                Nouvelle conversation
+            </div>
+
+            <div class="history-item">
+                <i class="fa-regular fa-message"></i>
+                Intelligence artificielle
+            </div>
+
+            <div class="history-item">
+                <i class="fa-regular fa-message"></i>
+                Développement web
+            </div>
+
+            <div class="history-item">
+                <i class="fa-regular fa-message"></i>
+                Aide aux études
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="profile">
+                <div class="avatar">U</div>
+                <div>
+                    <h4>Utilisateur</h4>
+                    <small>Compte personnel</small>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+
+    <!-- ZONE DE CONVERSATION -->
+    <main class="chat-main">
+
+        <header class="chat-header">
+
+            <div>
+                <h3>Assistant ChatAI</h3>
+                <span class="status">
+                    <span class="online-dot"></span>
+                    En ligne
+                </span>
+            </div>
+
+            <button class="menu-btn" onclick="toggleSidebar()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+        </header>
+
+
+        <!-- AFFICHAGE DES MESSAGES -->
+        <section class="messages" id="messages">
+
+            <div class="welcome" id="welcome">
+
+                <div class="welcome-icon">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+
+                <h1>Bonjour ! 👋</h1>
+                <h2>Comment puis-je vous aider ?</h2>
+
+                <p>
+                    Posez vos questions et laissez ChatAI
+                    vous accompagner.
+                </p>
+
+                <div class="suggestions">
+
+                    <button onclick="suggestMessage('Explique-moi le fonctionnement de l’intelligence artificielle')">
+                        <i class="fa-solid fa-brain"></i>
+                        Comprendre l'IA
+                    </button>
+
+                    <button onclick="suggestMessage('Aide-moi à apprendre la programmation')">
+                        <i class="fa-solid fa-code"></i>
+                        Apprendre à coder
+                    </button>
+
+                    <button onclick="suggestMessage('Donne-moi des idées de projets')">
+                        <i class="fa-regular fa-lightbulb"></i>
+                        Idées de projets
+                    </button>
+
+                    <button onclick="suggestMessage('Aide-moi à préparer mes examens')">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        Aide aux études
+                    </button>
+
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ZONE DE SAISIE -->
+        <div class="input-area">
+
+            <div class="message-box">
+
+                <textarea
+                    id="messageInput"
+                    placeholder="Écrivez votre message à ChatAI..."
+                    rows="1"
+                    onkeydown="handleEnter(event)">
+                </textarea>
+
+                <button class="send-btn" onclick="sendMessage()" type="button">
+                    <i class="fa-solid fa-arrow-up"></i>
+                </button>
+
+            </div>
+
+            <p class="disclaimer">
+                ChatAI peut faire des erreurs. Vérifiez les informations importantes.
+            </p>
+
+        </div>
+
+    </main>
+
 </div>
-<button>press the button</button>
+
+
+<script>
+
+    // ENVOYER UN MESSAGE
+    function sendMessage() {
+
+        const input = document.getElementById("messageInput");
+        const messages = document.getElementById("messages");
+
+        const message = input.value.trim();
+
+        if (message === "") return;
+
+        document.getElementById("welcome")?.remove();
+
+        // Message utilisateur
+        const userMessage = document.createElement("div");
+        userMessage.className = "message user-message";
+
+        const userText = document.createElement("p");
+        userText.textContent = message;
+
+        userMessage.appendChild(userText);
+        messages.appendChild(userMessage);
+
+        input.value = "";
+        input.style.height = "auto";
+
+        messages.scrollTop = messages.scrollHeight;
+
+        // Réponse de démonstration
+        setTimeout(() => {
+
+            const aiMessage = document.createElement("div");
+            aiMessage.className = "message ai-message";
+
+            const icon = document.createElement("div");
+            icon.className = "ai-avatar";
+            icon.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i>';
+
+            const text = document.createElement("p");
+
+            text.textContent =
+                "Bonjour ! Je suis ChatAI. Connectez-moi à une API d'intelligence artificielle pour obtenir de vraies réponses à vos questions.";
+
+            aiMessage.appendChild(icon);
+            aiMessage.appendChild(text);
+
+            messages.appendChild(aiMessage);
+
+            messages.scrollTop = messages.scrollHeight;
+
+        }, 700);
+    }
+
+
+    // ENVOYER AVEC ENTREE
+    function handleEnter(event) {
+
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    }
+
+
+    // SUGGESTIONS
+    function suggestMessage(message) {
+
+        document.getElementById("messageInput").value = message;
+
+        sendMessage();
+    }
+
+
+    // NOUVELLE CONVERSATION
+    function newConversation() {
+
+        document.getElementById("messages").innerHTML = `
+            <div class="welcome" id="welcome">
+                <div class="welcome-icon">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <h1>Bonjour ! 👋</h1>
+                <h2>Comment puis-je vous aider ?</h2>
+                <p>Posez vos questions et laissez ChatAI vous accompagner.</p>
+            </div>
+        `;
+    }
+
+
+    // OUVRIR / FERMER SIDEBAR
+    function toggleSidebar() {
+
+        document.getElementById("sidebar").classList.toggle("show");
+    }
+
+
+    // AGRANDIR AUTOMATIQUEMENT LE CHAMP
+    document.getElementById("messageInput").addEventListener("input", function () {
+
+        this.style.height = "auto";
+        this.style.height = Math.min(this.scrollHeight, 120) + "px";
+
+    });
+
+</script>
+    
